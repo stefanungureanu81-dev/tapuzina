@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card p-4 mb-4">
+            <div class="card-body">
+                <h2><i class="fas fa-cog text-gradient me-2"></i>Setari Generale</h2>
+                <p class="text-muted">Configurati programul de lucru si serviciile oferite</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Program de lucru -->
+<div class="row">
+    <div class="col-12">
+        <div class="card p-4 mb-4">
+            <div class="card-body">
+                <h4 class="mb-3"><i class="fas fa-clock text-primary me-2"></i>Program de lucru</h4>
+                <p class="text-muted small">Selectati zilele lucratoare si intervalul orar.</p>
+                
+                <form method="post" action="{% url 'save_working_hours' %}">
+                    {% csrf_token %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 120px;">Ziua</th>
+                                    <th style="width: 80px;">Activ</th>
+                                    <th>Ora inceput</th>
+                                    <th>Ora sfarsit</th>
+                                    <th>Pauza masa - inceput</th>
+                                    <th>Pauza masa - sfarsit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for day in day_names %}
+                                <tr>
+                                    <td><strong>{{ day }}</strong></td>
+                                    <td class="text-center">
+                                        <input type="checkbox" name="is_working_{{ forloop.counter0 }}" 
+                                               {% if forloop.counter0 < 6 %}checked{% endif %}
+                                               onchange="toggleDay(this, {{ forloop.counter0 }})" class="form-check-input">
+                                    </td>
+                                    <td>
+                                        <select name="start_time_{{ forloop.counter0 }}" class="form-control form-control-sm">
+                                            <option value="06:00">06:00</option>
+                                            <option value="07:00">07:00</option>
+                                            <option value="08:00" selected>08:00</option>
+                                            <option value="09:00">09:00</option>
+                                            <option value="10:00">10:00</option>
+                                            <option value="11:00">11:00</option>
+                                            <option value="12:00">12:00</option>
+                                            <option value="13:00">13:00</option>
+                                            <option value="14:00">14:00</option>
+                                            <option value="15:00">15:00</option>
+                                            <option value="16:00">16:00</option>
+                                            <option value="17:00">17:00</option>
+                                            <option value="18:00">18:00</option>
+                                            <option value="19:00">19:00</option>
+                                            <option value="20:00">20:00</option>
+                                            <option value="21:00">21:00</option>
+                                            <option value="22:00">22:00</option>
+                                            <option value="23:00">23:00</option>
+                                            <option value="23:59">23:59</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="end_time_{{ forloop.counter0 }}" class="form-control form-control-sm">
+                                            <option value="07:00">07:00</option>
+                                            <option value="08:00">08:00</option>
+                                            <option value="09:00">09:00</option>
+                                            <option value="10:00">10:00</option>
+                                            <option value="11:00">11:00</option>
+                                            <option value="12:00">12:00</option>
+                                            <option value="13:00">13:00</option>
+                                            <option value="14:00">14:00</option>
+                                            <option value="15:00">15:00</option>
+                                            <option value="16:00">16:00</option>
+                                            <option value="17:00">17:00</option>
+                                            <option value="18:00">18:00</option>
+                                            <option value="19:00">19:00</option>
+                                            <option value="20:00">20:00</option>
+                                            <option value="21:00">21:00</option>
+                                            <option value="22:00" selected>22:00</option>
+                                            <option value="23:00">23:00</option>
+                                            <option value="23:59">23:59</option>
+                                            <option value="00:00">00:00</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="lunch_start_{{ forloop.counter0 }}" class="form-control form-control-sm">
+                                            <option value="">Fara pauza</option>
+                                            <option value="12:00">12:00</option>
+                                            <option value="12:30">12:30</option>
+                                            <option value="13:00" selected>13:00</option>
+                                            <option value="13:30">13:30</option>
+                                            <option value="14:00">14:00</option>
+                                            <option value="14:30">14:30</option>
+                                            <option value="15:00">15:00</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select name="lunch_end_{{ forloop.counter0 }}" class="form-control form-control-sm">
+                                            <option value="">Fara pauza</option>
+                                            <option value="12:30">12:30</option>
+                                            <option value="13:00">13:00</option>
+                                            <option value="13:30">13:30</option>
+                                            <option value="14:00" selected>14:00</option>
+                                            <option value="14:30">14:30</option>
+                                            <option value="15:00">15:00</option>
+                                            <option value="15:30">15:30</option>
+                                            <option value="16:00">16:00</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salveaza programul
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Servicii -->
+<div class="row">
+    <div class="col-12">
+        <div class="card p-4">
+            <div class="card-body">
+                <h4 class="mb-3"><i class="fas fa-concierge-bell text-primary me-2"></i>Servicii oferite</h4>
+                <p class="text-muted small">Adaugati sau editati serviciile oferite.</p>
+                
+                <form method="post" action="{% url 'save_services' %}" id="servicesForm">
+                    {% csrf_token %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="servicesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 200px;">Nume serviciu</th>
+                                    <th style="width: 160px;">Tip</th>
+                                    <th style="width: 120px;">Durata (min)</th>
+                                    <th style="width: 120px;">Max persoane</th>
+                                    <th style="width: 80px;">Activ</th>
+                                    <th style="width: 60px;">Actiune</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for service in services %}
+                                <tr>
+                                    <td><input type="text" name="service_name[]" class="form-control form-control-sm" value="{{ service.name }}" required></td>
+                                    <td>
+                                        <select name="service_type[]" class="form-control form-control-sm">
+                                            <option value="office" {% if service.service_type == 'office' %}selected{% endif %}>La Birou</option>
+                                            <option value="studio" {% if service.service_type == 'studio' %}selected{% endif %}>La Sediu</option>
+                                            <option value="home" {% if service.service_type == 'home' %}selected{% endif %}>La Domiciliu</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="number" name="service_duration[]" class="form-control form-control-sm" value="{{ service.duration_minutes }}" min="15" step="15" required></td>
+                                    <td><input type="number" name="service_max_persons[]" class="form-control form-control-sm" value="{{ service.max_persons }}" min="1" max="20" required></td>
+                                    <td class="text-center">
+                                        <input type="checkbox" name="service_active[]" class="form-check-input" {% if service.is_active %}checked{% endif %}>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td><input type="text" name="service_name[]" class="form-control form-control-sm" placeholder="Ex: Masaj relaxare" required></td>
+                                    <td>
+                                        <select name="service_type[]" class="form-control form-control-sm">
+                                            <option value="home">La Domiciliu</option>
+                                            <option value="office">La Birou</option>
+                                            <option value="studio">La Sediu</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="number" name="service_duration[]" class="form-control form-control-sm" value="60" min="15" step="15"></td>
+                                    <td><input type="number" name="service_max_persons[]" class="form-control form-control-sm" value="1" min="1" max="20"></td>
+                                    <td class="text-center"><input type="checkbox" name="service_active[]" class="form-check-input" checked></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-success me-2" onclick="addServiceRow()">
+                            <i class="fas fa-plus me-2"></i>Adauga serviciu
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salveaza serviciile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table td { vertical-align: middle; }
+.form-control-sm { font-size: 14px; }
+</style>
+
+<script>
+function toggleDay(checkbox, day) {
+    var row = checkbox.closest('tr');
+    var selects = row.querySelectorAll('select');
+    
+    if (checkbox.checked) {
+        selects.forEach(function(select) { select.disabled = false; });
+    } else {
+        selects.forEach(function(select) { select.disabled = true; });
+    }
+}
+
+function addServiceRow() {
+    var table = document.getElementById('servicesTable').getElementsByTagName('tbody')[0];
+    var newRow = table.insertRow();
+    
+    newRow.innerHTML = `
+        <td><input type="text" name="service_name[]" class="form-control form-control-sm" placeholder="Nume serviciu" required></td>
+        <td>
+            <select name="service_type[]" class="form-control form-control-sm">
+                <option value="home">La Domiciliu</option>
+                <option value="office">La Birou</option>
+                <option value="studio">La Sediu</option>
+            </select>
+        </td>
+        <td><input type="number" name="service_duration[]" class="form-control form-control-sm" value="60" min="15" step="15"></td>
+        <td><input type="number" name="service_max_persons[]" class="form-control form-control-sm" value="1" min="1" max="20"></td>
+        <td class="text-center"><input type="checkbox" name="service_active[]" class="form-check-input" checked></td>
+        <td class="text-center">
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    `;
+}
+
+function removeRow(button) {
+    var row = button.closest('tr');
+    var tbody = row.parentNode;
+    if (tbody.rows.length > 1) {
+        row.remove();
+    } else {
+        alert('Trebuie sa existe cel putin un serviciu!');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var checkboxes = document.querySelectorAll('input[type="checkbox"][name^="is_working_"]');
+    checkboxes.forEach(function(cb) {
+        toggleDay(cb, 0);
+    });
+});
+</script>
+{% endblock %}

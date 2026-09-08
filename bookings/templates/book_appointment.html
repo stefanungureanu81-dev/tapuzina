@@ -1,0 +1,584 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card p-4 mb-4">
+            <div class="card-body">
+                <h2 class="mb-4"><i class="fas fa-calendar-plus text-gradient me-2"></i>Programare noua</h2>
+                
+                <!-- Calendar -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5><i class="fas fa-calendar-alt me-2"></i>{{ month_name }}</h5>
+                        <div>
+                            <a href="?month={{ prev_month|date:'Y-m' }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                            <a href="?month={{ next_month|date:'Y-m' }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-1">
+                        <div class="col"><strong>Luni</strong></div>
+                        <div class="col"><strong>Marti</strong></div>
+                        <div class="col"><strong>Miercuri</strong></div>
+                        <div class="col"><strong>Joi</strong></div>
+                        <div class="col"><strong>Vineri</strong></div>
+                        <div class="col"><strong>Sambata</strong></div>
+                        <div class="col"><strong>Duminica</strong></div>
+                    </div>
+                    
+                    {% for week in month_days %}
+                        <div class="row g-1 mt-1">
+                            {% for day in week %}
+                                <div class="col">
+                                    <div class="calendar-day {% if day == 0 %}weekend{% endif %} 
+                                        {% if day > 0 and day in occupied_dates %}occupied{% endif %}
+                                        {% if day == today.day and current_date.month == today.month and current_date.year == today.year %}today{% endif %}"
+                                        onclick="{% if day > 0 and day in occupied_dates %}showOccupiedSlots({{ day }}){% else %}selectDate({{ day }}){% endif %}"
+                                        style="cursor: pointer;">
+                                        <div class="day-number">
+                                            {% if day > 0 %}{{ day }}{% endif %}
+                                            {% if day > 0 and day in occupied_dates %}
+                                                <span class="occupied-dot"></span>
+                                            {% endif %}
+                                        </div>
+                                        {% if day > 0 and day in occupied_dates %}
+                                            <small class="text-danger">Ocupat</small>
+                                        {% elif day > 0 %}
+                                            <small class="text-muted">Disponibil</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    <small class="text-muted mt-2 d-block">
+                        <span class="occupied-dot me-1"></span> Zile ocupate &nbsp;|&nbsp; 
+                        <span style="display:inline-block;width:12px;height:12px;border:2px solid #e91e63;border-radius:4px;vertical-align:middle;"></span> Ziua curenta
+                    </small>
+                </div>
+                
+                <form method="post" id="appointmentForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label"><i class="fas fa-concierge-bell me-2"></i>Selectati serviciul</label>
+                        <select name="service" class="form-control" required id="serviceSelect" onchange="toggleServiceFields()">
+                            <option value="">Alege un serviciu</option>
+                            {% for service in services %}
+                                <option value="{{ service.id }}" data-type="{{ service.service_type }}">
+                                    {{ service.get_service_type_display }} - {{ service.name }}
+                                    ({{ service.duration_minutes }} minute)
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if not services %}
+                            <div class="alert alert-warning mt-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Nu exista servicii configurate. Intra in admin si adauga servicii.
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div id="companyFields">
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-building me-2"></i>Selectati firma</label>
+                            <select name="company" class="form-control">
+                                <option value="">Alege o firma existenta sau adauga una noua</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-plus-circle me-2"></i>Sau adauga firma noua</label>
+                            <input type="text" name="new_company" class="form-control" placeholder="Nume firma noua">
+                        </div>
+                    </div>
+                    
+                    <div id="studioFields" style="display:none;" class="bg-light p-3 rounded mb-3">
+                        <h6><i class="fas fa-map-marker-alt text-primary me-2"></i>Adresa sediu Tapuzina</h6>
+                        <p class="small mb-2">Bulevardul Theodor Pallady nr. 66A, incinta complexului rezidential HILS, bloc B5, scara 1, apartament 11, parter</p>
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input type="checkbox" name="parking_available" class="form-check-input" id="parkingCheck">
+                                <label class="form-check-label" for="parkingCheck">Loc de parcare suprateran disponibil</label>
+                            </div>
+                        </div>
+                        <div id="parkingFields" style="display:none;">
+                            <div class="mb-2">
+                                <label class="form-label">Numar loc parcare</label>
+                                <input type="text" name="parking_spot_number" class="form-control" placeholder="Ex: 42">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Informatii parcare</label>
+                                <textarea name="parking_notes" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Data si ora -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar-day me-2"></i>Data</label>
+                            <input type="date" name="date" class="form-control" required id="dateInput" min="{{ today|date:'Y-m-d' }}" style="font-size: 16px;">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-clock me-2"></i>Ora inceput (24H)</label>
+                            <select name="start_time" class="form-control" required style="font-size: 16px; padding: 10px;">
+                                <option value="">Selectati ora</option>
+                                <option value="00:00">00:00</option>
+                                <option value="00:30">00:30</option>
+                                <option value="01:00">01:00</option>
+                                <option value="01:30">01:30</option>
+                                <option value="02:00">02:00</option>
+                                <option value="02:30">02:30</option>
+                                <option value="03:00">03:00</option>
+                                <option value="03:30">03:30</option>
+                                <option value="04:00">04:00</option>
+                                <option value="04:30">04:30</option>
+                                <option value="05:00">05:00</option>
+                                <option value="05:30">05:30</option>
+                                <option value="06:00">06:00</option>
+                                <option value="06:30">06:30</option>
+                                <option value="07:00">07:00</option>
+                                <option value="07:30">07:30</option>
+                                <option value="08:00">08:00</option>
+                                <option value="08:30">08:30</option>
+                                <option value="09:00">09:00</option>
+                                <option value="09:30">09:30</option>
+                                <option value="10:00">10:00</option>
+                                <option value="10:30">10:30</option>
+                                <option value="11:00">11:00</option>
+                                <option value="11:30">11:30</option>
+                                <option value="12:00">12:00</option>
+                                <option value="12:30">12:30</option>
+                                <option value="13:00">13:00</option>
+                                <option value="13:30">13:30</option>
+                                <option value="14:00">14:00</option>
+                                <option value="14:30">14:30</option>
+                                <option value="15:00">15:00</option>
+                                <option value="15:30">15:30</option>
+                                <option value="16:00">16:00</option>
+                                <option value="16:30">16:30</option>
+                                <option value="17:00">17:00</option>
+                                <option value="17:30">17:30</option>
+                                <option value="18:00">18:00</option>
+                                <option value="18:30">18:30</option>
+                                <option value="19:00">19:00</option>
+                                <option value="19:30">19:30</option>
+                                <option value="20:00">20:00</option>
+                                <option value="20:30">20:30</option>
+                                <option value="21:00">21:00</option>
+                                <option value="21:30">21:30</option>
+                                <option value="22:00">22:00</option>
+                                <option value="22:30">22:30</option>
+                                <option value="23:00">23:00</option>
+                                <option value="23:30">23:30</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-clock me-2"></i>Ora sfarsit (24H)</label>
+                            <select name="end_time" class="form-control" required style="font-size: 16px; padding: 10px;">
+                                <option value="">Selectati ora</option>
+                                <option value="00:00">00:00</option>
+                                <option value="00:30">00:30</option>
+                                <option value="01:00">01:00</option>
+                                <option value="01:30">01:30</option>
+                                <option value="02:00">02:00</option>
+                                <option value="02:30">02:30</option>
+                                <option value="03:00">03:00</option>
+                                <option value="03:30">03:30</option>
+                                <option value="04:00">04:00</option>
+                                <option value="04:30">04:30</option>
+                                <option value="05:00">05:00</option>
+                                <option value="05:30">05:30</option>
+                                <option value="06:00">06:00</option>
+                                <option value="06:30">06:30</option>
+                                <option value="07:00">07:00</option>
+                                <option value="07:30">07:30</option>
+                                <option value="08:00">08:00</option>
+                                <option value="08:30">08:30</option>
+                                <option value="09:00">09:00</option>
+                                <option value="09:30">09:30</option>
+                                <option value="10:00">10:00</option>
+                                <option value="10:30">10:30</option>
+                                <option value="11:00">11:00</option>
+                                <option value="11:30">11:30</option>
+                                <option value="12:00">12:00</option>
+                                <option value="12:30">12:30</option>
+                                <option value="13:00">13:00</option>
+                                <option value="13:30">13:30</option>
+                                <option value="14:00">14:00</option>
+                                <option value="14:30">14:30</option>
+                                <option value="15:00">15:00</option>
+                                <option value="15:30">15:30</option>
+                                <option value="16:00">16:00</option>
+                                <option value="16:30">16:30</option>
+                                <option value="17:00">17:00</option>
+                                <option value="17:30">17:30</option>
+                                <option value="18:00">18:00</option>
+                                <option value="18:30">18:30</option>
+                                <option value="19:00">19:00</option>
+                                <option value="19:30">19:30</option>
+                                <option value="20:00">20:00</option>
+                                <option value="20:30">20:30</option>
+                                <option value="21:00">21:00</option>
+                                <option value="21:30">21:30</option>
+                                <option value="22:00">22:00</option>
+                                <option value="22:30">22:30</option>
+                                <option value="23:00">23:00</option>
+                                <option value="23:30">23:30</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-users me-2"></i>Numar persoane</label>
+                            <input type="number" name="number_of_persons" class="form-control" min="1" max="20" value="1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-coffee me-2"></i>Durata pauza masor (min)</label>
+                            <input type="number" name="break_duration" class="form-control" min="5" max="120" value="30">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h5 class="mb-3"><i class="fas fa-user text-primary me-2"></i>Date contact</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Nume contact</label>
+                            <input type="text" name="contact_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Telefon</label>
+                            <input type="text" name="contact_phone" class="form-control" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="contact_email" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h5 class="mb-3"><i class="fas fa-map-marker-alt text-primary me-2"></i>Adresa si locatie</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Adresa completa</label>
+                        <textarea name="location_address" class="form-control" rows="2" required></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Nume cladire</label>
+                            <input type="text" name="building_name" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Etaj</label>
+                            <input type="text" name="floor" class="form-control" placeholder="Ex: 3">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Numar apartament/birou</label>
+                            <input type="text" name="apartment_number" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h5 class="mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Informatii suplimentare</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Pauza masor - inceput (24H)</label>
+                            <select name="massage_break_start" class="form-control" style="font-size: 16px; padding: 10px;">
+                                <option value="">Selectati ora</option>
+                                <option value="00:00">00:00</option>
+                                <option value="00:30">00:30</option>
+                                <option value="01:00">01:00</option>
+                                <option value="01:30">01:30</option>
+                                <option value="02:00">02:00</option>
+                                <option value="02:30">02:30</option>
+                                <option value="03:00">03:00</option>
+                                <option value="03:30">03:30</option>
+                                <option value="04:00">04:00</option>
+                                <option value="04:30">04:30</option>
+                                <option value="05:00">05:00</option>
+                                <option value="05:30">05:30</option>
+                                <option value="06:00">06:00</option>
+                                <option value="06:30">06:30</option>
+                                <option value="07:00">07:00</option>
+                                <option value="07:30">07:30</option>
+                                <option value="08:00">08:00</option>
+                                <option value="08:30">08:30</option>
+                                <option value="09:00">09:00</option>
+                                <option value="09:30">09:30</option>
+                                <option value="10:00">10:00</option>
+                                <option value="10:30">10:30</option>
+                                <option value="11:00">11:00</option>
+                                <option value="11:30">11:30</option>
+                                <option value="12:00">12:00</option>
+                                <option value="12:30">12:30</option>
+                                <option value="13:00">13:00</option>
+                                <option value="13:30">13:30</option>
+                                <option value="14:00">14:00</option>
+                                <option value="14:30">14:30</option>
+                                <option value="15:00">15:00</option>
+                                <option value="15:30">15:30</option>
+                                <option value="16:00">16:00</option>
+                                <option value="16:30">16:30</option>
+                                <option value="17:00">17:00</option>
+                                <option value="17:30">17:30</option>
+                                <option value="18:00">18:00</option>
+                                <option value="18:30">18:30</option>
+                                <option value="19:00">19:00</option>
+                                <option value="19:30">19:30</option>
+                                <option value="20:00">20:00</option>
+                                <option value="20:30">20:30</option>
+                                <option value="21:00">21:00</option>
+                                <option value="21:30">21:30</option>
+                                <option value="22:00">22:00</option>
+                                <option value="22:30">22:30</option>
+                                <option value="23:00">23:00</option>
+                                <option value="23:30">23:30</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Pauza masor - sfarsit (24H)</label>
+                            <select name="massage_break_end" class="form-control" style="font-size: 16px; padding: 10px;">
+                                <option value="">Selectati ora</option>
+                                <option value="00:00">00:00</option>
+                                <option value="00:30">00:30</option>
+                                <option value="01:00">01:00</option>
+                                <option value="01:30">01:30</option>
+                                <option value="02:00">02:00</option>
+                                <option value="02:30">02:30</option>
+                                <option value="03:00">03:00</option>
+                                <option value="03:30">03:30</option>
+                                <option value="04:00">04:00</option>
+                                <option value="04:30">04:30</option>
+                                <option value="05:00">05:00</option>
+                                <option value="05:30">05:30</option>
+                                <option value="06:00">06:00</option>
+                                <option value="06:30">06:30</option>
+                                <option value="07:00">07:00</option>
+                                <option value="07:30">07:30</option>
+                                <option value="08:00">08:00</option>
+                                <option value="08:30">08:30</option>
+                                <option value="09:00">09:00</option>
+                                <option value="09:30">09:30</option>
+                                <option value="10:00">10:00</option>
+                                <option value="10:30">10:30</option>
+                                <option value="11:00">11:00</option>
+                                <option value="11:30">11:30</option>
+                                <option value="12:00">12:00</option>
+                                <option value="12:30">12:30</option>
+                                <option value="13:00">13:00</option>
+                                <option value="13:30">13:30</option>
+                                <option value="14:00">14:00</option>
+                                <option value="14:30">14:30</option>
+                                <option value="15:00">15:00</option>
+                                <option value="15:30">15:30</option>
+                                <option value="16:00">16:00</option>
+                                <option value="16:30">16:30</option>
+                                <option value="17:00">17:00</option>
+                                <option value="17:30">17:30</option>
+                                <option value="18:00">18:00</option>
+                                <option value="18:30">18:30</option>
+                                <option value="19:00">19:00</option>
+                                <option value="19:30">19:30</option>
+                                <option value="20:00">20:00</option>
+                                <option value="20:30">20:30</option>
+                                <option value="21:00">21:00</option>
+                                <option value="21:30">21:30</option>
+                                <option value="22:00">22:00</option>
+                                <option value="22:30">22:30</option>
+                                <option value="23:00">23:00</option>
+                                <option value="23:30">23:30</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Informatii acces</label>
+                        <textarea name="access_notes" class="form-control" rows="2" placeholder="Cod interfon, etaj, etc."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Cerinte speciale</label>
+                        <textarea name="special_requests" class="form-control" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Alte observatii</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check me-2"></i>Trimite programare
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Anuleaza</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card p-3 mb-3">
+            <div class="card-body">
+                <h5><i class="fas fa-images text-primary me-2"></i>Galerie</h5>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <img src="/media/services/masaj1.png" class="service-image" alt="Masaj 1" onerror="this.style.display='none'">
+                    </div>
+                    <div class="col-6">
+                        <img src="/media/services/masaj2.png" class="service-image" alt="Masaj 2" onerror="this.style.display='none'">
+                    </div>
+                    <div class="col-6">
+                        <img src="/media/services/masaj3.png" class="service-image" alt="Masaj 3" onerror="this.style.display='none'">
+                    </div>
+                    <div class="col-6">
+                        <img src="/media/services/scaun.png" class="service-image" alt="Scaun masaj" onerror="this.style.display='none'">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card p-3">
+            <div class="card-body">
+                <h5><i class="fas fa-info-circle text-info me-2"></i>Serviciile noastre</h5>
+                {% for service in services %}
+                    <div class="mb-2 p-2 bg-light rounded">
+                        <strong>{{ service.get_service_type_display }}</strong>
+                        <p class="small mb-0">{{ service.name }}</p>
+                        <p class="small text-muted">{{ service.duration_minutes }} minute - Max {{ service.max_persons }} persoane</p>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">Nu exista servicii configurate.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pentru intervale ocupate -->
+<div class="modal fade" id="occupiedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-clock text-danger me-2"></i>Intervale ocupate</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="occupiedModalBody">
+                <p class="text-muted">Incarcare...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Inchide</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle parcare
+document.getElementById('parkingCheck').addEventListener('change', function() {
+    document.getElementById('parkingFields').style.display = this.checked ? 'block' : 'none';
+});
+
+// Toggle campuri in functie de serviciu
+function toggleServiceFields() {
+    var select = document.getElementById('serviceSelect');
+    var selectedOption = select.options[select.selectedIndex];
+    var serviceType = selectedOption ? selectedOption.dataset.type : '';
+    
+    var companyFields = document.getElementById('companyFields');
+    var studioFields = document.getElementById('studioFields');
+    
+    if (serviceType === 'office' || serviceType === 'studio') {
+        companyFields.style.display = 'block';
+    } else {
+        companyFields.style.display = 'none';
+    }
+    
+    if (serviceType === 'studio') {
+        studioFields.style.display = 'block';
+    } else {
+        studioFields.style.display = 'none';
+    }
+}
+
+// Selecteaza data din calendar
+function selectDate(day) {
+    if (day > 0) {
+        var year = {{ current_date.year }};
+        var month = {{ current_date.month }};
+        var dateInput = document.getElementById('dateInput');
+        var selectedDate = new Date(year, month - 1, day);
+        var formattedDate = selectedDate.getFullYear() + '-' + 
+                           String(selectedDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(selectedDate.getDate()).padStart(2, '0');
+        dateInput.value = formattedDate;
+        
+        document.getElementById('appointmentForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Afiseaza intervalele ocupate pentru o zi
+function showOccupiedSlots(day) {
+    var year = {{ current_date.year }};
+    var month = {{ current_date.month }};
+    var dateObj = new Date(year, month - 1, day);
+    var dateStr = dateObj.getFullYear() + '-' + 
+                  String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(dateObj.getDate()).padStart(2, '0');
+    
+    var modalBody = document.getElementById('occupiedModalBody');
+    var slotsHtml = '<h6>Intervale ocupate in aceasta zi:</h6><ul class="list-unstyled">';
+    var hasSlots = false;
+    
+    // Folosim datele din occupied_slots trimise din views
+    var slotsData = {{ occupied_slots|safe }};
+    
+    for (var dateKey in slotsData) {
+        if (dateKey === dateStr) {
+            slotsData[dateKey].forEach(function(slot) {
+                slotsHtml += '<li class="mb-2"><span class="badge bg-danger me-2">Ocupat</span> ' + slot.start + ' - ' + slot.end + '</li>';
+                hasSlots = true;
+            });
+        }
+    }
+    
+    if (hasSlots) {
+        slotsHtml += '</ul>';
+        modalBody.innerHTML = slotsHtml;
+    } else {
+        modalBody.innerHTML = '<p class="text-muted">Nu exista intervale ocupate in aceasta zi.</p>';
+    }
+    
+    var modal = new bootstrap.Modal(document.getElementById('occupiedModal'));
+    modal.show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var dateInput = document.getElementById('dateInput');
+    if (dateInput) {
+        var today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
+    }
+    toggleServiceFields();
+});
+
+document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+    var start = document.querySelector('select[name="start_time"]').value;
+    var end = document.querySelector('select[name="end_time"]').value;
+    if (start && end && start >= end) {
+        e.preventDefault();
+        alert('Ora de sfarsit trebuie sa fie dupa ora de inceput!');
+    }
+});
+</script>
+{% endblock %}

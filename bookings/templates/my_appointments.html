@@ -1,0 +1,49 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-list text-gradient me-2"></i>Toate programarile</h2>
+            <a href="{% url 'book_appointment' %}" class="btn btn-primary">
+                <i class="fas fa-calendar-plus me-2"></i>Programare noua
+            </a>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Serviciu</th>
+                        <th>Data</th>
+                        <th>Interval</th>
+                        <th>Persoane</th>
+                        <th>Status</th>
+                        <th>Actiuni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in appointments %}
+                    <tr>
+                        <td><strong>{{ app.service.get_service_type_display }}</strong><br><small>{{ app.service.name }}</small></td>
+                        <td>{{ app.date|date:"d.m.Y" }}</td>
+                        <td>{{ app.start_time|time:"H:i" }} - {{ app.end_time|time:"H:i" }}</td>
+                        <td>{{ app.number_of_persons }}</td>
+                        <td><span class="status-badge status-{{ app.status }}">{{ app.get_status_display }}</span></td>
+                        <td>
+                            <a href="{% url 'appointment_detail' app.id %}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
+                            {% if app.status == 'pending' or app.status == 'confirmed' %}
+                                <a href="{% url 'cancel_appointment' app.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Sunteti sigur?')"><i class="fas fa-times"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-4"><i class="fas fa-calendar-times fa-3x text-muted mb-3"></i><p>Nu ai nicio programare.</p></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

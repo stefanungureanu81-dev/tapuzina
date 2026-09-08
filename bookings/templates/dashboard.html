@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card p-4 mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-2">
+                            <i class="fas fa-hand-sparkles text-gradient me-2"></i>
+                            Bun venit, {{ user.first_name|default:user.username }}!
+                        </h2>
+                        <p class="text-muted">Gasiti rapid o zi disponibila pentru programare</p>
+                    </div>
+                    <a href="{% url 'book_appointment' %}" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus me-2"></i>Programare noua
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar rapid cu disponibilitate -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card p-4">
+            <div class="card-body">
+                <h4 class="mb-3"><i class="fas fa-calendar-alt text-primary me-2"></i>Disponibilitate luna curenta</h4>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>{{ current_month_name }}</h5>
+                    <div>
+                        <a href="?month={{ prev_month|date:'Y-m' }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        <a href="?month={{ next_month|date:'Y-m' }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="row g-1">
+                    <div class="col"><strong>Luni</strong></div>
+                    <div class="col"><strong>Marti</strong></div>
+                    <div class="col"><strong>Miercuri</strong></div>
+                    <div class="col"><strong>Joi</strong></div>
+                    <div class="col"><strong>Vineri</strong></div>
+                    <div class="col"><strong>Sambata</strong></div>
+                    <div class="col"><strong>Duminica</strong></div>
+                </div>
+                
+                {% for week in month_days %}
+                    <div class="row g-1 mt-1">
+                        {% for day in week %}
+                            <div class="col">
+                                <div class="calendar-day {% if day == 0 %}weekend{% endif %} 
+                                    {% if day > 0 and day in occupied_dates %}occupied{% endif %}
+                                    {% if day == today.day and current_date.month == today.month and current_date.year == today.year %}today{% endif %}"
+                                    onclick="{% if day > 0 and day in occupied_dates %}showSlots({{ day }}){% else %}goToBook({{ day }}){% endif %}"
+                                    style="cursor: pointer;">
+                                    <div class="day-number">
+                                        {% if day > 0 %}{{ day }}{% endif %}
+                                        {% if day > 0 and day in occupied_dates %}
+                                            <span class="occupied-dot"></span>
+                                        {% endif %}
+                                    </div>
+                                    {% if day > 0 and day in occupied_dates %}
+                                        <small class="text-danger">Ocupat</small>
+                                        <small class="text-muted d-block" style="font-size: 0.6rem;">Click detalii</small>
+                                    {% elif day > 0 %}
+                                        <small class="text-success">Disponibil</small>
+                                        <small class="text-muted d-block" style="font-size: 0.6rem;">Click programeaza</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <span class="occupied-dot me-1"></span> Zile ocupate 
+                        <span class="ms-3" style="display:inline-block;width:12px;height:12px;border:2px solid #e91e63;border-radius:4px;vertical-align:middle;"></span> Ziua curenta
+                        <span class="ms-3 text-success">●</span> Disponibil
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card p-3 mb-3">
+            <div class="card-body">
+                <h5><i class="fas fa-calendar-check text-success me-2"></i>Programari viitoare</h5>
+                {% if upcoming %}
+                    {% for app in upcoming %}
+                        <div class="border-bottom py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted">{{ app.date|date:"d.m.Y" }}</small>
+                                    <br>
+                                    <small>{{ app.start_time|time:"H:i" }} - {{ app.end_time|time:"H:i" }}</small>
+                                    <br>
+                                    <span class="badge status-{{ app.status }}">{{ app.get_status_display }}</span>
+                                </div>
+                                <a href="{% url 'appointment_detail' app.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted small">Nu ai programari viitoare.</p>
+                {% endif %}
+                <a href="{% url 'my_appointments' %}" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+                    <i class="fas fa-list me-1"></i>Vezi toate
+                </a>
+            </div>
+        </div>
+        
+        <div class="card p-3">
+            <div class="card-body">
+                <h5><i class="fas fa-bolt text-warning me-2"></i>Actiuni rapide</h5>
+                <a href="{% url 'book_appointment' %}" class="btn btn-primary w-100 mb-2">
+                    <i class="fas fa-calendar-plus me-2"></i>Programare noua
+                </a>
+                <a href="{% url 'my_appointments' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-list me-2"></i>Toate programarile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pentru detalii zi ocupata -->
+<div class="modal fade" id="slotsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-clock text-danger me-2"></i>Intervale ocupate</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="slotsModalBody">
+                <p class="text-muted">Incarcare...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Inchide</button>
+                <a href="{% url 'book_appointment' %}" class="btn btn-primary">
+                    <i class="fas fa-calendar-plus me-2"></i>Vezi toate zilele
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.calendar-day {
+    min-height: 90px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 5px;
+    transition: all 0.3s;
+    text-align: center;
+}
+.calendar-day:hover {
+    background: #f8f9fa;
+    transform: scale(1.02);
+}
+.calendar-day.occupied {
+    background: #ffebee;
+    border-color: #e91e63;
+}
+.calendar-day.occupied .day-number {
+    color: #e91e63;
+    font-weight: 700;
+}
+.calendar-day.weekend {
+    background: #f5f5f5;
+}
+.calendar-day.today {
+    border-color: #e91e63;
+    border-width: 2px;
+}
+.day-number {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+.occupied-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #e91e63;
+    border-radius: 50%;
+    margin: 2px;
+}
+.status-pending { background: #ffc107; color: #000; }
+.status-confirmed { background: #28a745; color: #fff; }
+.status-cancelled { background: #dc3545; color: #fff; }
+.status-completed { background: #6c757d; color: #fff; }
+</style>
+
+<script>
+// Datele ocupate trimise din backend
+var slotsData = {{ slots_json|safe }};
+
+function goToBook(day) {
+    var year = {{ current_date.year }};
+    var month = {{ current_date.month }};
+    var dateStr = year + "-" + String(month).padStart(2, '0') + "-" + String(day).padStart(2, '0');
+    window.location.href = "{% url 'book_appointment' %}?date=" + dateStr;
+}
+
+function showSlots(day) {
+    var year = {{ current_date.year }};
+    var month = {{ current_date.month }};
+    var dateObj = new Date(year, month - 1, day);
+    var dateStr = dateObj.getFullYear() + '-' + 
+                  String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + 
+                  String(dateObj.getDate()).padStart(2, '0');
+    
+    var modalBody = document.getElementById('slotsModalBody');
+    var slotsHtml = '<h6>Intervale ocupate in aceasta zi:</h6><ul class="list-unstyled">';
+    var hasSlots = false;
+    
+    if (slotsData && slotsData[dateStr]) {
+        slotsData[dateStr].forEach(function(slot) {
+            slotsHtml += '<li class="mb-2"><span class="badge bg-danger me-2">Ocupat</span> ' + slot.start + ' - ' + slot.end + '</li>';
+            hasSlots = true;
+        });
+    }
+    
+    if (hasSlots) {
+        slotsHtml += '</ul>';
+        slotsHtml += '<p class="text-muted small mt-2">Alegeti alta zi disponibila pentru programare.</p>';
+    } else {
+        slotsHtml = '<p class="text-muted">Nu exista intervale ocupate in aceasta zi.</p>';
+        slotsHtml += '<a href="' + "{% url 'book_appointment' %}" + '?date=' + dateStr + '" class="btn btn-success w-100 mt-2">';
+        slotsHtml += '<i class="fas fa-calendar-plus me-2"></i>Programeaza in aceasta zi';
+        slotsHtml += '</a>';
+    }
+    
+    modalBody.innerHTML = slotsHtml;
+    var modal = new bootstrap.Modal(document.getElementById('slotsModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

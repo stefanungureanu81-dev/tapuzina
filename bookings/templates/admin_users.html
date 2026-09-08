@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card p-4 mb-4">
+            <div class="card-body">
+                <h2><i class="fas fa-users text-gradient me-2"></i>Gestionare Utilizatori</h2>
+                <p class="text-muted">Creati si gestionati utilizatorii pentru firme</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <div class="card-body">
+                <h4 class="mb-3"><i class="fas fa-user-plus text-primary me-2"></i>Creeaza utilizator</h4>
+                <form method="post" action="{% url 'add_user' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Username *</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email *</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Prenume</label>
+                            <input type="text" name="first_name" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nume</label>
+                            <input type="text" name="last_name" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefon</label>
+                        <input type="text" name="phone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Firma *</label>
+                        <select name="company" class="form-control" required>
+                            <option value="">Selectati firma</option>
+                            {% for company in companies %}
+                                <option value="{{ company.id }}">{{ company.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Parola *</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-user-plus me-2"></i>Creeaza utilizator
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card p-4">
+            <div class="card-body">
+                <h4 class="mb-3"><i class="fas fa-list text-info me-2"></i>Utilizatori existenti</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+    <tr>
+        <th>Username</th>
+        <th>Nume</th>
+        <th>Email</th>
+        <th>Firma</th>
+        <th>Status</th>
+        <th>Actiuni</th>
+    </tr>
+</thead>
+<tbody>
+    {% for user in users %}
+    <tr>
+        <td><strong>{{ user.username }}</strong></td>
+        <td>{{ user.get_full_name|default:"-" }}</td>
+        <td>{{ user.email }}</td>
+        <td>
+            {% if user.company %}
+                {{ user.company.name }}
+            {% else %}
+                <span class="text-muted">Nicio firma</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if user.is_active %}
+                <span class="badge bg-success">Activ</span>
+            {% else %}
+                <span class="badge bg-danger">Inactiv</span>
+            {% endif %}
+        </td>
+        <td>
+            <a href="{% url 'edit_user' user.id %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-edit"></i>
+            </a>
+            <a href="{% url 'reset_password' user.id %}" class="btn btn-sm btn-warning">
+                <i class="fas fa-key"></i>
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="6" class="text-center text-muted">Nu exista utilizatori.</td>
+    </tr>
+    {% endfor %}
+</tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card p-4 mb-4">
+            <div class="card-body">
+                <h2><i class="fas fa-cog text-gradient me-2"></i>Panou Admin</h2>
+                <p class="text-muted">Gestionati firmele, utilizatorii si programarile</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card p-3 mb-3">
+            <div class="card-body">
+                <h5><i class="fas fa-building text-primary me-2"></i>Adauga firma noua</h5>
+                <form method="post" action="{% url 'add_company' %}">
+                    {% csrf_token %}
+                    <div class="mb-2"><input type="text" name="name" class="form-control" placeholder="Nume firma *" required></div>
+                    <div class="mb-2"><input type="text" name="cui" class="form-control" placeholder="CUI"></div>
+                    <div class="mb-2"><textarea name="address" class="form-control" rows="2" placeholder="Adresa"></textarea></div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2"><input type="text" name="contact_person" class="form-control" placeholder="Persoana contact"></div>
+                        <div class="col-md-6 mb-2"><input type="text" name="contact_phone" class="form-control" placeholder="Telefon"></div>
+                    </div>
+                    <div class="mb-2"><input type="email" name="contact_email" class="form-control" placeholder="Email contact"></div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-plus me-2"></i>Adauga firma</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3 mb-3">
+            <div class="card-body">
+                <h5><i class="fas fa-user-plus text-primary me-2"></i>Creeaza utilizator</h5>
+                <form method="post" action="{% url 'add_user' %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-2"><input type="text" name="username" class="form-control" placeholder="Username *" required></div>
+                        <div class="col-md-6 mb-2"><input type="email" name="email" class="form-control" placeholder="Email *" required></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-2"><input type="text" name="first_name" class="form-control" placeholder="Prenume"></div>
+                        <div class="col-md-6 mb-2"><input type="text" name="last_name" class="form-control" placeholder="Nume"></div>
+                    </div>
+                    <div class="mb-2"><input type="text" name="phone" class="form-control" placeholder="Telefon"></div>
+                    <div class="mb-2">
+                        <select name="company" class="form-control" required>
+                            <option value="">Selectati firma *</option>
+                            {% for company in companies %}<option value="{{ company.id }}">{{ company.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-2"><input type="password" name="password" class="form-control" placeholder="Parola *" required></div>
+                    <button type="submit" class="btn btn-success w-100"><i class="fas fa-user-plus me-2"></i>Creeaza utilizator</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <div class="card-body">
+                <h5><i class="fas fa-building text-success me-2"></i>Firme active</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>Nume</th><th>Contact</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for company in companies %}
+                            <tr><td>{{ company.name }}</td><td>{{ company.contact_person|default:"-" }}</td>
+                                <td>{% if company.is_active %}<span class="badge bg-success">Activ</span>{% else %}<span class="badge bg-danger">Inactiv</span>{% endif %}</td></tr>
+                            {% empty %}<tr><td colspan="3">Nu exista firme.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3">
+            <div class="card-body">
+                <h5><i class="fas fa-calendar-alt text-warning me-2"></i>Programari recente</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>Client</th><th>Serviciu</th><th>Data</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for app in appointments %}
+                            <tr><td>{{ app.contact_name }}</td><td>{{ app.service.name }}</td><td>{{ app.date|date:"d.m.Y" }}</td>
+                                <td><span class="badge {% if app.status == 'pending' %}bg-warning{% elif app.status == 'confirmed' %}bg-success{% elif app.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">{{ app.get_status_display }}</span></td></tr>
+                            {% empty %}<tr><td colspan="4">Nu exista programari.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
