@@ -1,5 +1,8 @@
 import os
 from pathlib import Path
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -87,7 +90,13 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'your_cloud_name',  # Înlocuiește cu Cloud Name din Dashboard
+    'API_KEY': 'your_api_key',        # Înlocuiește cu API Key din Dashboard
+    'API_SECRET': 'your_api_secret'   # Înlocuiește cu API Secret din Dashboard
+}
 
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -116,3 +125,18 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+try:
+    from bookings.models import Company
+    if not Company.objects.filter(name="Persoana fizica").exists():
+        Company.objects.create(
+            name="Persoana fizica",
+            cui="",
+            address="",
+            contact_person="",
+            contact_phone="",
+            contact_email="",
+            is_active=True
+        )
+        print("✅ Persoana fizica adaugata automat!")
+except:
+    pass

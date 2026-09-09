@@ -728,3 +728,60 @@ Echipa Tapuzina.ro
         return redirect('admin_users')
     
     return render(request, 'reset_password.html', {'user': user})
+def send_welcome_email(user):
+    """Trimite email de bun venit catre noul utilizator"""
+    subject = f'Bun venit la Tapuzina.ro, {user.first_name or user.username}!'
+    message = f'''
+Buna {user.first_name or user.username}!
+
+Contul tau la Tapuzina.ro a fost creat cu succes.
+
+Datele tale de autentificare:
+- Username: {user.username}
+- Email: {user.email}
+
+Pentru a te autentifica si a face programari, acceseaza:
+{settings.SITE_URL}/login/
+
+Te rugam sa iti schimbi parola dupa primul login.
+
+Ce poti face in contul tau:
+- Programeaza un masaj la birou, la sediul Tapuzina sau la domiciliu
+- Vezi istoricul programarilor
+- Anuleaza sau reprogrameaza programari
+
+Pentru orice intrebare, nu ezita sa ne contactezi la:
+programare@tapuzina.ro
+
+Cu stima,
+Echipa Tapuzina.ro
+{settings.SITE_URL}
+'''
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+        print(f"Email de bun venit trimis catre {user.email}")
+    except Exception as e:
+        print(f"Eroare la trimiterea emailului de bun venit: {e}")
+
+def register(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            
+            # Trimite email de bun venit
+            send_welcome_email(user)
+            
+            messages.success(request, 'Cont creat cu succes! Verifica-ti emailul pentru detalii.')
+            return redirect('dashboard')
+    else:
+        form = RegisterForm()
+    return render(request, 'register.html', {'form': form})
