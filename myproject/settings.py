@@ -1,9 +1,14 @@
 import os
 from pathlib import Path
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
 
+# Cloudinary imports
+try:
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.api
+except ImportError:
+    # Dacă nu e instalat, continuă
+    pass
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -22,6 +27,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bookings',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
