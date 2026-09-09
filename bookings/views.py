@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, date
 import calendar
 import uuid
 from .models import Appointment, Service, WorkingHours, Company
-
+from .forms import RegisterForm, AppointmentForm
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True)
     phone = forms.CharField(max_length=20, required=True)
