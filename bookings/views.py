@@ -13,21 +13,6 @@ import calendar
 import uuid
 from .models import Appointment, Service, WorkingHours, Company
 from .forms import RegisterForm, AppointmentForm
-class RegisterForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    phone = forms.CharField(max_length=20, required=True)
-    first_name = forms.CharField(max_length=30, required=True)
-    last_name = forms.CharField(max_length=30, required=True)
-    company = forms.ModelChoiceField(queryset=Company.objects.filter(is_active=True), required=True, label="Firma")
-    
-    class Meta:
-        model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'password1', 'password2', 'company']
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field in self.fields:
-            self.fields[field].widget.attrs['class'] = 'form-control'
 
 def is_admin(user):
     return user.is_staff or user.is_superuser
@@ -99,13 +84,59 @@ def add_user(request):
         return redirect('admin_users')
     return redirect('admin_users')
 
+def send_welcome_email(user):
+    """Trimite email de bun venit catre noul utilizator"""
+    subject = f'Bun venit la Tapuzina.ro, {user.first_name or user.username}!'
+    message = f'''
+Buna {user.first_name or user.username}!
+
+Contul tau la Tapuzina.ro a fost creat cu succes.
+
+Datele tale de autentificare:
+- Username: {user.username}
+- Email: {user.email}
+
+Pentru a te autentifica si a face programari, acceseaza:
+{settings.SITE_URL}/login/
+
+Te rugam sa iti schimbi parola dupa primul login.
+
+Ce poti face in contul tau:
+- Programeaza un masaj la birou, la sediul Tapuzina sau la domiciliu
+- Vezi istoricul programarilor
+- Anuleaza sau reprogrameaza programari
+
+Pentru orice intrebare, nu ezita sa ne contactezi la:
+programare@tapuzina.ro
+
+Cu stima,
+Echipa Tapuzina.ro
+{settings.SITE_URL}
+'''
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+        print(f"Email de bun venit trimis catre {user.email}")
+    except Exception as e:
+        print(f"Eroare la trimiterea emailului de bun venit: {e}")
+
 def register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(request, 'Cont creat cu succes!')
+            
+            # Trimite email de bun venit
+            send_welcome_email(user)
+            
+            messages.success(request, 'Cont creat cu succes! Verifica-ti emailul pentru detalii.')
             return redirect('dashboard')
     else:
         form = RegisterForm()
@@ -162,7 +193,7 @@ def dashboard(request):
     occupied_dates = []
     
     for o in occupied:
-        date_key = o['date'].isoformat()  # Convertim la string ISO
+        date_key = o['date'].isoformat()
         if date_key not in occupied_slots:
             occupied_slots[date_key] = []
             occupied_dates.append(date_key)
@@ -173,7 +204,6 @@ def dashboard(request):
     
     occupied_days = [date.fromisoformat(d).day for d in occupied_dates if date.fromisoformat(d).month == current_date.month]
     
-    # Convertim occupied_slots la JSON pentru JavaScript
     import json
     slots_json = json.dumps(occupied_slots)
     
@@ -186,11 +216,12 @@ def dashboard(request):
         'month_days': month_days,
         'occupied_dates': occupied_days,
         'occupied_slots': occupied_slots,
-        'slots_json': slots_json,  # Trimitem ca JSON
+        'slots_json': slots_json,
         'current_month_name': current_date.strftime('%B %Y'),
         'prev_month': (current_date.replace(day=1) - timedelta(days=1)).replace(day=1),
         'next_month': (current_date.replace(day=28) + timedelta(days=4)).replace(day=1),
     })
+
 def send_confirmation_email(appointment):
     site_url = settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'http://127.0.0.1:8000'
     confirm_url = site_url + '/confirm/' + appointment.confirmation_token + '/'
@@ -514,6 +545,7 @@ def book_appointment(request):
         'prev_month': (current_date.replace(day=1) - timedelta(days=1)).replace(day=1),
         'next_month': (current_date.replace(day=28) + timedelta(days=4)).replace(day=1),
     })
+
 @login_required
 def cancel_appointment(request, pk):
     appointment = get_object_or_404(Appointment, id=pk, client=request.user)
@@ -728,60 +760,3 @@ Echipa Tapuzina.ro
         return redirect('admin_users')
     
     return render(request, 'reset_password.html', {'user': user})
-def send_welcome_email(user):
-    """Trimite email de bun venit catre noul utilizator"""
-    subject = f'Bun venit la Tapuzina.ro, {user.first_name or user.username}!'
-    message = f'''
-Buna {user.first_name or user.username}!
-
-Contul tau la Tapuzina.ro a fost creat cu succes.
-
-Datele tale de autentificare:
-- Username: {user.username}
-- Email: {user.email}
-
-Pentru a te autentifica si a face programari, acceseaza:
-{settings.SITE_URL}/login/
-
-Te rugam sa iti schimbi parola dupa primul login.
-
-Ce poti face in contul tau:
-- Programeaza un masaj la birou, la sediul Tapuzina sau la domiciliu
-- Vezi istoricul programarilor
-- Anuleaza sau reprogrameaza programari
-
-Pentru orice intrebare, nu ezita sa ne contactezi la:
-programare@tapuzina.ro
-
-Cu stima,
-Echipa Tapuzina.ro
-{settings.SITE_URL}
-'''
-    
-    try:
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-        print(f"Email de bun venit trimis catre {user.email}")
-    except Exception as e:
-        print(f"Eroare la trimiterea emailului de bun venit: {e}")
-
-def register(request):
-    if request.method == 'POST':
-        form = RegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            
-            # Trimite email de bun venit
-            send_welcome_email(user)
-            
-            messages.success(request, 'Cont creat cu succes! Verifica-ti emailul pentru detalii.')
-            return redirect('dashboard')
-    else:
-        form = RegisterForm()
-    return render(request, 'register.html', {'form': form})
