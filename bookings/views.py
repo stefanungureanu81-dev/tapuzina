@@ -126,18 +126,26 @@ Echipa Tapuzina.ro
     except Exception as e:
         print(f"Eroare la trimiterea emailului de bun venit: {e}")
 
-def register(request):
+ddef register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             
-            # Trimite email de bun venit
-            send_welcome_email(user)
+            # Trimite email de bun venit (dacă e configurat)
+            try:
+                send_welcome_email(user)
+            except:
+                pass
             
-            messages.success(request, 'Cont creat cu succes! Verifica-ti emailul pentru detalii.')
+            messages.success(request, 'Cont creat cu succes!')
             return redirect('dashboard')
+        else:
+            # Afișează erorile în formular
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = RegisterForm()
     return render(request, 'register.html', {'form': form})

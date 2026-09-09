@@ -14,7 +14,7 @@ class RegisterForm(UserCreationForm):
     company = forms.ModelChoiceField(
         queryset=Company.objects.filter(is_active=True),
         required=False,
-        label="Firma (optional)",
+        label="Firma",
         empty_label="Persoana fizica"
     )
     
@@ -26,9 +26,17 @@ class RegisterForm(UserCreationForm):
         super().__init__(*args, **kwargs)
         for field in self.fields:
             self.fields[field].widget.attrs['class'] = 'form-control'
-            if field == 'company':
-                self.fields[field].widget.attrs['class'] = 'form-control'
-        self.fields['company'].help_text = "Selectati o firma sau lasati pentru persoana fizica"
+        self.fields['company'].required = False
+        self.fields['company'].help_text = "Selecteaza o firma sau lasa pentru persoana fizica"    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if commit:
+            user.save()
+            # Dacă s-a selectat o companie, o salvăm
+            if self.cleaned_data.get('company'):
+                # Aici poți salva compania într-un model Profile dacă ai
+                pass
+        return user
 
 
 class AppointmentForm(forms.ModelForm):
