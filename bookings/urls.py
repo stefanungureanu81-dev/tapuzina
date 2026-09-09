@@ -23,6 +23,7 @@ urlpatterns = [
     path('confirm/<str:token>/', views.confirm_appointment, name='confirm_appointment'),
     path('confirm-my/<int:pk>/', views.confirm_my_appointment, name='confirm_my_appointment'),
     path('edit-company/<int:pk>/', views.edit_company, name='edit_company'),
-path('edit-user/<int:pk>/', views.edit_user, name='edit_user'),
+    path('edit-user/<int:pk>/', views.edit_user, name='edit_user'),
+    path('view-users/', views.view_users, name='view_users'),
 path('reset-password/<int:pk>/', views.reset_password, name='reset_password'),
 ]

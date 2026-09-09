@@ -147,3 +147,18 @@ try:
         print("✅ Persoana fizica adaugata automat!")
 except:
     pass
+try:
+    from django.contrib.auth.models import User
+    if not User.objects.filter(is_superuser=True).exists():
+        User.objects.create_superuser('admin', 'orar@tapuzina.ro', 'admin123')
+        print("✅ Admin creat automat!")
+    else:
+        print(f"ℹ️ Admin exista deja: {User.objects.filter(is_superuser=True).first().username}")
+    
+    # Afișează toți utilizatorii
+    users = User.objects.all()
+    print(f"Total utilizatori: {users.count()}")
+    for u in users:
+        print(f"  - {u.username} (admin: {u.is_superuser})")
+except Exception as e:
+    print(f"Eroare: {e}")

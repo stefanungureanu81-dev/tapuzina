@@ -768,3 +768,8 @@ Echipa Tapuzina.ro
         return redirect('admin_users')
     
     return render(request, 'reset_password.html', {'user': user})
+@login_required
+@user_passes_test(is_admin)
+def view_users(request):
+    users = User.objects.all().order_by('-date_joined')
+    return render(request, 'view_users.html', {'users': users})
