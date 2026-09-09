@@ -126,7 +126,7 @@ Echipa Tapuzina.ro
     except Exception as e:
         print(f"Eroare la trimiterea emailului de bun venit: {e}")
 
-ddef register(request):
+def register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
