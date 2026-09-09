@@ -433,16 +433,16 @@
                 <h5><i class="fas fa-images text-primary me-2"></i>Galerie</h5>
                 <div class="row g-2">
                     <div class="col-6">
-                        <img src="/media/services/masaj1.png" class="service-image" alt="Masaj 1" onerror="this.style.display='none'">
+                        <img src="https://res.cloudinary.com/tpolhmze/image/upload/v1788935539/tapuzina/services/qwlaoa0ma73db4t3dnuq.png" class="service-image" alt="Masaj 1">
                     </div>
                     <div class="col-6">
-                        <img src="/media/services/masaj2.png" class="service-image" alt="Masaj 2" onerror="this.style.display='none'">
+                        <img src="https://res.cloudinary.com/tpolhmze/image/upload/v1788935541/tapuzina/services/yzuzqv8m5taz94ud99tm.png" class="service-image" alt="Masaj 2">
                     </div>
                     <div class="col-6">
-                        <img src="/media/services/masaj3.png" class="service-image" alt="Masaj 3" onerror="this.style.display='none'">
+                        <img src="https://res.cloudinary.com/tpolhmze/image/upload/v1788935542/tapuzina/services/fxv6jtcalzjbiia7wcni.png" class="service-image" alt="Masaj 3">
                     </div>
                     <div class="col-6">
-                        <img src="/media/services/scaun.png" class="service-image" alt="Scaun masaj" onerror="this.style.display='none'">
+                        <img src="https://res.cloudinary.com/tpolhmze/image/upload/v1788935543/tapuzina/services/hifmxbrxvyudgu0yaj4n.png" class="service-image" alt="Scaun masaj">
                     </div>
                 </div>
             </div>
@@ -540,7 +540,6 @@ function showOccupiedSlots(day) {
     var slotsHtml = '<h6>Intervale ocupate in aceasta zi:</h6><ul class="list-unstyled">';
     var hasSlots = false;
     
-    // Folosim datele din occupied_slots trimise din views
     var slotsData = {{ occupied_slots|safe }};
     
     for (var dateKey in slotsData) {
